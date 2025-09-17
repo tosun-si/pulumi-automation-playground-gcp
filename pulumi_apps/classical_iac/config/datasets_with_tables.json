@@ -1,6 +1,6 @@
 [
   {
-    "datasetId": "team_league_raw_pulumi",
+    "datasetId": "team_league_raw_pulumi_iac",
     "datasetRegion": "EU",
     "datasetFriendlyName": "Team league Dataset containing raw data",
     "datasetDescription": "Team league raw Dataset description",
@@ -12,7 +12,7 @@
     ]
   },
   {
-    "datasetId": "team_league_pulumi",
+    "datasetId": "team_league_pulumi_iac",
     "datasetRegion": "EU",
     "datasetFriendlyName": "Team league Dataset containing domain data",
     "datasetDescription": "Team league domain Dataset description",

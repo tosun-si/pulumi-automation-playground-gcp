@@ -1,5 +1,5 @@
 [project]
-name = "adk-demos"
+name = "pulumi-automation-playground-gcp"
 version = "0.1.0"
 description = "Project that shows code samples with Pulumi automation"
 readme = "README.md"
