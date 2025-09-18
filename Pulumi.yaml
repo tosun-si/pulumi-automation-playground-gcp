@@ -4,3 +4,4 @@ runtime:
 backend:
   url: gs://gb-poc-pulumi-state/main
 description: A minimal Google Cloud Python Pulumi program
+main: pulumi_apps/classical_iac
