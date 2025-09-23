@@ -4,3 +4,4 @@
 .envrc
 *venv
 .venv
+__pycache__/

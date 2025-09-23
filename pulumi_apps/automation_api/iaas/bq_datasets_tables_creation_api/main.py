@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from pulumi import automation as auto
 from pydantic import BaseModel
 
+from pulumi_apps.shared.bq_resources_creation.dataset_table_input_objects import DatasetInput
 from pulumi_apps.shared.bq_resources_creation.datasets_with_tables import get_dataset, get_table_with_partitioning, \
     get_table
 
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class Request(BaseModel):
-    datasets_with_tables_input: list[dict]
+    datasets_with_tables_input: list[DatasetInput]
 
 
 class Response(BaseModel):
@@ -63,13 +64,13 @@ async def teams_league_service(request: Request):
     )
 
 
-def pulumi_program(datasets_with_tables_input: list[dict]):
+def pulumi_program(datasets_with_tables_input: list[DatasetInput]):
     for dataset in datasets_with_tables_input:
         bq_dataset = get_dataset(dataset)
 
-        for table in dataset["tables"]:
+        for table in dataset.tables:
             (
-                get_table_with_partitioning(bq_dataset, table) if table.get("partitionType") is not None
+                get_table_with_partitioning(bq_dataset, table) if table.partitionType is not None
                 else get_table(bq_dataset, table)
             )
 
