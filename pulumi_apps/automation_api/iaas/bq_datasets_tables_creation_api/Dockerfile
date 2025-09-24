@@ -20,4 +20,9 @@ COPY --from=builder /app /app
 
 ENV PATH="/app/.venv/bin:$PATH"
 
+RUN adduser --disabled-password --gecos '' appuser && \
+    chown -R appuser /app
+
+USER appuser
+
 CMD ["uvicorn", "pulumi_apps.automation_api.iaas.bq_datasets_tables_creation_api.main:app", "--host", "0.0.0.0", "--port", "8080"]
