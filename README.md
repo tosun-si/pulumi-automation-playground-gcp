@@ -25,7 +25,7 @@ The request body and the request payload is:
 {
   "datasets_with_tables_input": [
     {
-      "datasetId": "team_league_raw_pulumi",
+      "datasetId": "team_league_raw_pulumi_iaas",
       "datasetRegion": "EU",
       "datasetFriendlyName": "Team league Dataset containing raw data",
       "datasetDescription": "Team league raw Dataset description",
@@ -37,7 +37,7 @@ The request body and the request payload is:
       ]
     },
     {
-      "datasetId": "team_league_pulumi",
+      "datasetId": "team_league_pulumi_iaas",
       "datasetRegion": "EU",
       "datasetFriendlyName": "Team league Dataset containing domain data",
       "datasetDescription": "Team league domain Dataset description",
@@ -56,6 +56,37 @@ The request body and the request payload is:
     }
   ]
 }
+```
+
+## Build the IaaS FastAPI app locally with Docker
+
+```bash
+docker buildx build \
+    -f pulumi_apps/automation_api/iaas/bq_datasets_tables_creation_api/Dockerfile \
+    -t $LOCATION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$SERVICE_NAME:$IMAGE_TAG \
+    .
+```
+
+## Run the IaaS FastAPI app locally with Docker
+
+```bash
+docker run --rm -it \
+    -p 8080:8080 \
+    -e PROJECT_ID="$PROJECT_ID" \
+    -e LOCATION="$LOCATION" \
+    -v "$HOME/.config/gcloud:/root/.config/gcloud:ro" \
+    $LOCATION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$SERVICE_NAME:$IMAGE_TAG
+```
+
+## Build and deploy the IaaS FastAPI in Cloud Run
+
+```bash
+gcloud builds submit \
+    --project=$PROJECT_ID \
+    --region=$LOCATION \
+    --config deploy-iaas-in-cloud-run.yaml \
+    --substitutions _REPO_NAME="$REPO_NAME",_SERVICE_NAME="$SERVICE_NAME",_IMAGE_TAG="$IMAGE_TAG" \
+    --verbosity="debug" .
 ```
 
 ## Install the CLI app locally with UV and Typer

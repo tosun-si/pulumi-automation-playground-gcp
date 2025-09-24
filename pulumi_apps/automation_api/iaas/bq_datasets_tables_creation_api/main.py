@@ -7,6 +7,9 @@ from fastapi import FastAPI
 from pulumi import automation as auto
 from pydantic import BaseModel
 
+from pulumi_apps.automation_api.automation_env_vars import GOOGLE_PROJECT_KEY, GOOGLE_REGION_KEY, \
+    PULUMI_BACKEND_URL_KEY, PULUMI_BACKEND_URL_VALUE, PULUMI_CONFIG_PASSPHRASE_KEY, PULUMI_CONFIG_PASSPHRASE_VALUE, \
+    STACK_NAME_VALUE
 from pulumi_apps.shared.bq_resources_creation.dataset_table_input_objects import DatasetInput
 from pulumi_apps.shared.bq_resources_creation.datasets_with_tables import get_dataset, get_table_with_partitioning, \
     get_table
@@ -26,14 +29,19 @@ class Response(BaseModel):
 
 
 @app.post('/bigquery/teams_league/datasets/tables')
-async def teams_league_service(request: Request):
-    project_id = 'gb-poc-373711'
-    region = 'europe-west1'
-    stack_name = 'iaas_team_league_datasets_tables'
+async def teams_league_datasets_service(request: Request):
+    project_id = os.environ.get('PROJECT_ID', 'PROJECT_ID env var is not set.')
+    region = os.environ.get('LOCATION', 'LOCATION env var is not set.')
+
+    os.environ[GOOGLE_PROJECT_KEY] = project_id
+    os.environ[GOOGLE_REGION_KEY] = region
+    os.environ[PULUMI_BACKEND_URL_KEY] = PULUMI_BACKEND_URL_VALUE
+    os.environ[PULUMI_CONFIG_PASSPHRASE_KEY] = PULUMI_CONFIG_PASSPHRASE_VALUE
+    # os.environ[STACK_NAME_KEY] = STACK_NAME_VALUE
 
     stack = auto.create_or_select_stack(
-        stack_name=stack_name,
-        project_name=project_id,
+        stack_name=STACK_NAME_VALUE,
+        project_name="datasets_tables_automation_iaas",
         program=lambda: pulumi_program(request.datasets_with_tables_input)
     )
 

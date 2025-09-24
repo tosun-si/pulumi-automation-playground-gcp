@@ -1,0 +1,31 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        echo "############# Build and publish the Dockerfile $_SERVICE_NAME"
+        
+        docker buildx create --use --driver docker-container
+        
+        docker buildx build \
+          -f pulumi_apps/automation_api/iaas/bq_datasets_tables_creation_api/Dockerfile \
+          -t $LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPO_NAME/$_SERVICE_NAME:$_IMAGE_TAG \
+          --push \
+          --cache-from=type=registry,ref=$LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPO_NAME/$_SERVICE_NAME:cache \
+          --cache-to=type=registry,ref=$LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPO_NAME/$_SERVICE_NAME:cache,mode=max .
+  - name: google/cloud-sdk:540.0.0-stable
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        echo "############# Deploying the Cloud Run service $_SERVICE_NAME"
+        
+        gcloud run deploy "$_SERVICE_NAME" \
+          --image "$LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPO_NAME/$_SERVICE_NAME:$_IMAGE_TAG" \
+          --region="$LOCATION" \
+          --allow-unauthenticated \
+          --memory=1Gi \
+          --set-env-vars PROJECT_ID="$PROJECT_ID" \
+          --set-env-vars LOCATION="$LOCATION"
+

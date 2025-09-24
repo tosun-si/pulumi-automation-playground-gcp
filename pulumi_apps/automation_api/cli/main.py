@@ -1,12 +1,14 @@
 import json
 import logging
+import os
 
 import typer
 from pulumi import automation as auto
 from typing_extensions import Annotated
 
-from pulumi_apps.automation_api.cli.cli_env_vars import GOOGLE_PROJECT_KEY, GOOGLE_REGION_KEY, STACK_NAME_VALUE, \
-    DATASETS_CONFIG_FILE_KEY
+from pulumi_apps.automation_api.automation_env_vars import GOOGLE_PROJECT_KEY, GOOGLE_REGION_KEY, STACK_NAME_VALUE, \
+    DATASETS_CONFIG_FILE_KEY, PULUMI_BACKEND_URL_KEY, PULUMI_BACKEND_URL_VALUE, PULUMI_CONFIG_PASSPHRASE_VALUE, \
+    PULUMI_CONFIG_PASSPHRASE_KEY
 from pulumi_apps.root import ROOT_DIR
 from pulumi_apps.shared.bq_resources_creation.datasets_with_tables import get_dataset, get_table_with_partitioning, \
     get_table
@@ -54,15 +56,15 @@ def run_tests(
     logger.info(f"region : {region}")
     logger.info(f"dataset-config : {dataset_config}")
 
-    # os.environ[GOOGLE_PROJECT_KEY] = project
-    # os.environ[GOOGLE_REGION_KEY] = region
-    # os.environ[PULUMI_BACKEND_URL_KEY] = PULUMI_BACKEND_URL_VALUE
-    # os.environ[PULUMI_CONFIG_PASSPHRASE_KEY] = PULUMI_CONFIG_PASSPHRASE_VALUE
+    os.environ[GOOGLE_PROJECT_KEY] = project
+    os.environ[GOOGLE_REGION_KEY] = region
+    os.environ[PULUMI_BACKEND_URL_KEY] = PULUMI_BACKEND_URL_VALUE
+    os.environ[PULUMI_CONFIG_PASSPHRASE_KEY] = PULUMI_CONFIG_PASSPHRASE_VALUE
     # os.environ[STACK_NAME_KEY] = STACK_NAME_VALUE
 
     stack = auto.create_or_select_stack(
         stack_name=STACK_NAME_VALUE,
-        project_name=project,
+        project_name="datasets_tables_automation_cli",
         program=lambda: pulumi_program(dataset_config)
     )
 
