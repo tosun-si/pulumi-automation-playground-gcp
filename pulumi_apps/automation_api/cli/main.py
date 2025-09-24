@@ -1,18 +1,28 @@
-import os
+import json
+import logging
 
 import typer
+from pulumi import automation as auto
 from typing_extensions import Annotated
 
-from bigtesty.cli.cli_env_vars import ROOT_TEST_FOLDER_KEY, ROOT_TABLES_FOLDER_KEY, TABLES_CONFIG_FILE_KEY, \
-    KEEP_INFRA_KEY, BIGTESTY_STACK_NAME_KEY, PULUMI_CONFIG_PASSPHRASE_KEY, PULUMI_BACKEND_URL_KEY, IAC_BACKEND_URL_KEY, \
-    BIGTESTY_STACK_NAME_VALUE, PULUMI_CONFIG_PASSPHRASE_VALUE, GOOGLE_PROJECT_KEY, GOOGLE_REGION_KEY
-from bigtesty.infra.infra_input_params import InfraInputParams
-from bigtesty.infra.launch_tests_ephemeral_infra import launch_tests_ephemeral_infra
+from pulumi_apps.automation_api.cli.cli_env_vars import GOOGLE_PROJECT_KEY, GOOGLE_REGION_KEY, STACK_NAME_VALUE, \
+    DATASETS_CONFIG_FILE_KEY
+from pulumi_apps.root import ROOT_DIR
+from pulumi_apps.shared.bq_resources_creation.datasets_with_tables import get_dataset, get_table_with_partitioning, \
+    get_table
+from pulumi_apps.shared.bq_resources_creation.datasets_with_tables_config_file_loader import \
+    get_datasets_with_tables_input
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = typer.Typer()
 
+datasets_app = typer.Typer()
+app.add_typer(datasets_app, name="dataset")
 
-@app.command("test", help="Run tests")
+
+@datasets_app.command("create", help="Create DWH BQ datasets and tables")
 def run_tests(
         project: Annotated[
             str,
@@ -30,79 +40,69 @@ def run_tests(
                 help="GCP region."
             )
         ],
-        iac_backend_url: Annotated[
+        dataset_config: Annotated[
             str,
             typer.Option(
-                "--iac-backend-url",
-                envvar=IAC_BACKEND_URL_KEY,
-                help="IaC backend URL for the ephemeral infra used for the tests."
-            )
-        ],
-        root_test_folder: Annotated[
-            str,
-            typer.Option(
-                "--root-test-folder",
-                envvar=ROOT_TEST_FOLDER_KEY,
-                help="Directory that contains test scenarios."
-            )
-        ],
-        root_tables_folder: Annotated[
-            str,
-            typer.Option(
-                "--root-tables-folder",
-                envvar=ROOT_TABLES_FOLDER_KEY,
-                help="Directory that contains schema files."
-            )
-        ],
-        tables_config_file_path: Annotated[
-            str,
-            typer.Option(
-                "--tables-config-file",
-                envvar=TABLES_CONFIG_FILE_KEY,
+                "--dataset-config",
+                envvar=DATASETS_CONFIG_FILE_KEY,
                 help="Path to configuration file."
             )
-        ],
-        keep_infra: Annotated[
-            bool,
-            typer.Option(
-                "--keep-infra",
-                envvar=KEEP_INFRA_KEY,
-                help="Keep infrastructure after exit."
-            )
-        ] = False):
-    print(f"####################### The CLI is invoked with params : ")
+        ]):
+    logger.info(f"####################### The CLI is invoked with params : ")
 
-    print(f"project : {project}")
-    print(f"region : {region}")
-    print(f"iac-backend-url : {iac_backend_url}")
-    print(f"root-test-folder : {root_test_folder}")
-    print(f"root-tables-folder : {root_tables_folder}")
-    print(f"tables-config-file : {tables_config_file_path}")
-    print(f"keep-infra : {keep_infra}")
+    logger.info(f"project : {project}")
+    logger.info(f"region : {region}")
+    logger.info(f"dataset-config : {dataset_config}")
 
-    os.environ[GOOGLE_PROJECT_KEY] = project
-    os.environ[GOOGLE_REGION_KEY] = region
-    os.environ[PULUMI_BACKEND_URL_KEY] = iac_backend_url
-    os.environ[PULUMI_CONFIG_PASSPHRASE_KEY] = PULUMI_CONFIG_PASSPHRASE_VALUE
-    os.environ[BIGTESTY_STACK_NAME_KEY] = BIGTESTY_STACK_NAME_VALUE
+    # os.environ[GOOGLE_PROJECT_KEY] = project
+    # os.environ[GOOGLE_REGION_KEY] = region
+    # os.environ[PULUMI_BACKEND_URL_KEY] = PULUMI_BACKEND_URL_VALUE
+    # os.environ[PULUMI_CONFIG_PASSPHRASE_KEY] = PULUMI_CONFIG_PASSPHRASE_VALUE
+    # os.environ[STACK_NAME_KEY] = STACK_NAME_VALUE
 
-    infra_input_params = InfraInputParams(
-        project_id=project,
-        region=region,
-        stack_name=BIGTESTY_STACK_NAME_VALUE,
-        root_test_folder=root_test_folder,
-        root_tables_folder=root_tables_folder,
-        tables_config_file_path=tables_config_file_path,
-        iac_backend_url=iac_backend_url,
-        keep_infra=keep_infra
+    stack = auto.create_or_select_stack(
+        stack_name=STACK_NAME_VALUE,
+        project_name=project,
+        program=lambda: pulumi_program(dataset_config)
     )
 
-    launch_tests_ephemeral_infra(infra_input_params)
+    logger.info("Installing plugins...")
+    stack.workspace.install_plugin("gcp", "v8.41.1")
+    logger.info("Plugins installed")
+
+    logger.info("Setting up config")
+    stack.set_config("gcp:project", auto.ConfigValue(value=project))
+    stack.set_config("gcp:region", auto.ConfigValue(value=region))
+    logger.info("Config set")
+
+    logger.info("Refreshing stack...")
+    stack.refresh(on_output=print)
+    logger.info("Refresh complete")
+
+    logger.info("#################### Creating the infra...")
+    up_res = stack.up(
+        on_output=print,
+        color="always",
+        show_secrets=False,
+        diff=True
+    )
+    logger.info(f"Update summary: \n{json.dumps(up_res.summary.resource_changes, indent=4)}")
+
+
+def pulumi_program(dataset_config: str):
+    for dataset in get_datasets_with_tables_input(f"{ROOT_DIR}/{dataset_config}"):
+        bq_dataset = get_dataset(dataset)
+
+        for table in dataset.tables:
+            (
+                get_table_with_partitioning(bq_dataset, table) if table.partitionType is not None
+                else get_table(bq_dataset, table)
+            )
 
 
 @app.command("help")
 def help():
-    print("BigTesty is an integration testing framework for BigQuery")
+    print("Team league datasets and tables creation from the CLI in BigQuery")
 
 
 def run():

@@ -57,3 +57,39 @@ The request body and the request payload is:
   ]
 }
 ```
+
+## Install the CLI app locally with UV and Typer
+
+Add the package elements in the pyproject.toml file:
+
+```text
+[tool.setuptools]
+packages = ["pulumi_apps"]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+```
+
+And the script for the CLI:
+
+```text
+[project.scripts]
+dwh = "pulumi_apps.automation_api.cli.main:run"
+```
+
+Install the CLI app:
+
+```bash
+uv pip install -e
+```
+
+Run the CLI locally:
+
+```bash
+dwh dataset create \
+  --project ${PROJECT_ID} \
+  --region ${LOCATION} \
+  --dataset-config automation_api/cli/config/datasets_with_tables.json
+```
+
