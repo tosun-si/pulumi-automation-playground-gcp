@@ -37,7 +37,6 @@ async def teams_league_datasets_service(request: Request):
     os.environ[GOOGLE_REGION_KEY] = region
     os.environ[PULUMI_BACKEND_URL_KEY] = PULUMI_BACKEND_URL_VALUE
     os.environ[PULUMI_CONFIG_PASSPHRASE_KEY] = PULUMI_CONFIG_PASSPHRASE_VALUE
-    # os.environ[STACK_NAME_KEY] = STACK_NAME_VALUE
 
     stack = auto.create_or_select_stack(
         stack_name=STACK_NAME_VALUE,
