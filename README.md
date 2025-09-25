@@ -74,7 +74,7 @@ docker run --rm -it \
     -p 8080:8080 \
     -e PROJECT_ID="$PROJECT_ID" \
     -e LOCATION="$LOCATION" \
-    -v "$HOME/.config/gcloud:/root/.config/gcloud:ro" \
+    -v "$HOME/.config/gcloud:/home/datasetscreatoruser/.config/gcloud:ro" \
     $LOCATION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$SERVICE_NAME:$IMAGE_TAG
 ```
 
