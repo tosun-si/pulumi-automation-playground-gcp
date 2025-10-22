@@ -5,6 +5,31 @@ This project proposes code samples using Pulumi and the Pulumi Automation API, w
 It highlights the classical IaC approach and shows how the Pulumi Automation API brings powerful capabilities to manage infrastructure programmatically\
 — using an API, CLI, or directly in code. This approach is especially well-suited for IaaS and PaaS scenarios
 
+## Run the classical IaC with Terraform
+
+**Init/Plan/Apply**:
+
+Go the Terraform module:
+
+```bash
+cd terraform/datasets_and_tables
+```
+
+```bash
+terraform init -backend-config="bucket=${TF_STATE_BUCKET}" -backend-config="prefix=${TF_STATE_PREFIX}/datasets_and_tables_iac_tf)"
+terraform plan --out tfplan.out
+terraform apply -auto-approve tfplan.out
+```
+
+## Run the classical IaC with Pulumi
+
+### Preview/Up
+
+```bash
+pulumi preview --diff
+pulumi up --diff --yes
+```
+
 ## Run the IaaS FastAPI app locally
 
 Install the Python packages with UV:
